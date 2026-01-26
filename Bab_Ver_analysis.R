@@ -1,12 +1,12 @@
-# ============================================================================
-# Movement Trajectory Analysis and Species Interaction Inference
-# Based on Wilkinson et al. 2021 and Muff et al. 2023
-# ============================================================================
+library(geosphere)
+library(adehabitatLT)
+devtools::install_github('thomasp85/gganimate', force = TRUE)
+
 
 # Install and load required packages
 required_packages <- c(
-  "dplyr", "ggplot2", "sf", "lubridate", "gganimate", "gifski",
-  "move", "adehabitatLT", "wildlifeDI", "amt", "viridis"
+  "dplyr", "ggplot2", "sf", "lubridate","geosphere" "gifski",
+  "move", "adehabitatLT", "wildlifeDI", "amt", "viridis", "adehabitatLT"
 )
 
 for (pkg in required_packages) {
@@ -16,9 +16,8 @@ for (pkg in required_packages) {
   }
 }
 
-library(gganimate)
 # ============================================================================
-# visualize the trajectories
+# PART 1: VISUALIZE MOVEMENT TRAJECTORIES BY DATE
 # ============================================================================
 
 visualize_trajectories <- function(data, output_dir = "outputs") {
@@ -31,6 +30,9 @@ visualize_trajectories <- function(data, output_dir = "outputs") {
   # Ensure New_Timestamp is POSIXct
   data$New_Timestamp <- as.POSIXct(data$New_Timestamp, format = "%Y-%m-%d %H:%M:%S")
   data$Date <- as.Date(data$New_Timestamp)
+  
+  # Filter out NA timestamps
+  data <- data %>% filter(!is.na(New_Timestamp))
   
   # Static plot: All trajectories colored by species
   p1 <- ggplot(data, aes(x = longitude, y = latitude, color = species)) +
@@ -69,32 +71,10 @@ visualize_trajectories <- function(data, output_dir = "outputs") {
   
   ggsave(file.path(output_dir, "trajectories_by_date.png"), p2, 
          width = 12, height = 12, dpi = 300)
-  
-  # Animated plot
-  cat("Creating animation (this may take a few minutes)...\n")
-  
-  p3 <- ggplot(data, aes(x = longitude, y = latitude, color = species)) +
-    geom_path(aes(group = species), alpha = 0.5, size = 1) +
-    geom_point(size = 3) +
-    scale_color_manual(values = c("Baboon" = "#D55E00", "Vervet" = "#009E73")) +
-    theme_minimal() +
-    labs(title = "Movement Trajectories: {frame_time}",
-         x = "Longitude", y = "Latitude",
-         color = "Species") +
-    coord_fixed(ratio = 1) +
-    gganimate::transition_time(New_Timestamp) +
-    shadow_wake(wake_length = 0.1, alpha = 0.3)
-  
-  anim <- animate(p3, nframes = 200, fps = 10, 
-                  width = 800, height = 600, renderer = gifski_renderer())
-  
-  anim_save(file.path(output_dir, "trajectories_animated.gif"), anim)
-  
-  cat("Visualizations saved to:", output_dir, "\n")
 }
 
 # ============================================================================
-# filter unrealistic movement
+# PART 2: FILTER UNREALISTIC MOVEMENTS
 # ============================================================================
 
 filter_unrealistic_movements <- function(data, max_speed_kmh = 5) {
@@ -106,13 +86,13 @@ filter_unrealistic_movements <- function(data, max_speed_kmh = 5) {
   cat("Maximum speed threshold:", max_speed_kmh, "km/h\n\n")
   
   # Ensure data is sorted
-  data <- matching_data %>%
+  data <- data %>%
     arrange(species, New_Timestamp)
   
   # Calculate step lengths and speeds
   data_filtered <- data %>%
-    group_by(species) %>%
-    mutate(
+    dplyr::group_by(species) %>%
+    dplyr::mutate(
       # Calculate distance to next point (meters)
       next_lon = lead(longitude),
       next_lat = lead(latitude),
@@ -167,7 +147,7 @@ filter_unrealistic_movements <- function(data, max_speed_kmh = 5) {
   # Remove unrealistic points
   data_clean <- data_filtered %>%
     filter(!unrealistic | is.na(unrealistic)) %>%
-    select(-next_lon, -next_lat, -next_time, -distance_m, 
+    dplyr::select(-next_lon, -next_lat, -next_time, -distance_m, 
            -time_diff_hours, -speed_kmh, -unrealistic)
   
   cat(sprintf("\nRemaining points after filtering: %d\n\n", nrow(data_clean)))
@@ -175,9 +155,8 @@ filter_unrealistic_movements <- function(data, max_speed_kmh = 5) {
   return(data_clean)
 }
 
-
 # ============================================================================
-# calculate the coefficent of sociality from wildlifeDI package (Long et al. 2014)
+# PART 3: COEFFICIENT OF SOCIALITY (Cs)
 # ============================================================================
 
 calculate_sociality_coefficient <- function(baboon_data, vervet_data) {

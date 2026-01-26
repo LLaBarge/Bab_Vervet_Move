@@ -218,8 +218,6 @@ if (nrow(waypoints) >= 7735) {
 }
 
 
-View(waypoints)
-
 
 # Create Baboon dataframe from waypoints only
 babs_all <- waypoints %>%
@@ -236,12 +234,12 @@ ver_all <- waypoints %>%
 babs <- babs_all %>%
   distinct(New_Timestamp, .keep_all = TRUE) %>%
   arrange(New_Timestamp)
-View(babs)
+
 
 ver <- ver_all %>%
   distinct(New_Timestamp, .keep_all = TRUE) %>%
   arrange(New_Timestamp)
-View(ver)
+
 
 # remove na
 ver_edited <- na.omit(ver)
