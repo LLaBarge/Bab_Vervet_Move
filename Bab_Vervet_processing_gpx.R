@@ -218,16 +218,16 @@ if (nrow(waypoints) >= 7735) {
 }
 
 
-
+library(dplyr)
 # Create Baboon dataframe from waypoints only
 babs_all <- waypoints %>%
   filter(species == "Baboon") %>%
-  select(name, longitude, latitude, species, New_Timestamp)
+  dplyr::select(name, longitude, latitude, species, New_Timestamp)
 
 # Create Vervet dataframe from waypoints only
 ver_all <- waypoints %>%
   filter(species == "Vervet") %>%
-  select(name, longitude, latitude, species, New_Timestamp)
+  dplyr::select(name, longitude, latitude, species, New_Timestamp)
 
 
 # Remove duplicates based on exact Timestamp match
