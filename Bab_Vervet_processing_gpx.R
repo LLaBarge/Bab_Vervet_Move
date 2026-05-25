@@ -1,21 +1,16 @@
 # GPX Files - Baboon and Vervet Movement Data
  
 # Install packages
-required_packages <- c("sf", "dplyr", "lubridate")
-
-for (pkg in required_packages) {
-  if (!require(pkg, character.only = TRUE)) {
-    install.packages(pkg)
-    library(pkg, character.only = TRUE)
-  }
-}
-
+library(sf)
+library(dplyr)
+library(lubridate)
+library(amt)
+library(ggplot2)
 
 gpx_folder <- "C:/Users/lrlab/PPP scan points/Baboon_Vervet_Move/gpx"
 
 # ============================================================================
 # function to read a gpx file with human-written notes
-# ============================================================================
 
 read_gpx_file <- function(gpx_path) {
   
@@ -123,7 +118,7 @@ if (length(all_data) == 0) {
 combined_data <- bind_rows(all_data)
 
 # ============================================================================
-# SPLIT INTO AD_LIB AND WAYPOINTS
+# split into ad lib (data collected all the time) and scan points
 # ============================================================================
 
 # Function to check if name starts with a digit (waypoints) or letter (ad_lib)
@@ -262,8 +257,6 @@ matching_data <- bind_rows(
   ver_edited %>% filter(Date %in% matching_dates)
 ) %>%
   arrange(Date, New_Timestamp)
-
-View(matching_data)
-
+#================================================================
 
 
